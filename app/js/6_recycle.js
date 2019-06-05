@@ -11,11 +11,11 @@ Parent_1.prototype.say = function(){ // 생성자의 프로토타입에 기능�
     return this.name;
 }
 function Child_1(name){} // 아무 내용이 없는 자식생성자
-inherit(Child_1, Parent_1); // 상속
+inherit_1(Child_1, Parent_1); // 상속
 /**
  * 부모 생성자와 자식생성자가 있고 부모 생성자의 프로토타입에 say()라는 메서드를 추가, 그리고 상속을 처리하는 inherit()함수 호출,
  */
-function inherit(_c, _p){
+function inherit_1(_c, _p){
     _c.prototype = new _p();
 }
 /*********************************************************************************************************************************************************************
@@ -24,9 +24,9 @@ function inherit(_c, _p){
  * 
  * 가장 널리 쓰이는 기본적인 방법은 Parent()생성자를 사용해 객체를 생성한 다음, 이 객체를 Child()의 프로토타입에 할당.
  * prototype 프로퍼티가 함수가 아닌 객체를 가리키게 하는 것(프로토타입이 부모 생성자 함수 자체가 아니라 부모 생성자 함수로 생성한 객체 인스턴스를 가리켜야 한다.)
- * 이 후 new Child()를 사용해 객체를 생성하면 프로토타입을 통해 Parent()인ㅇ스턴스의 기능을 물려받게 된다
+ * 이 후 new Child()를 사용해 객체를 생성하면 프로토타입을 통해 Parent()인스턴스의 기능을 물려받게 된다
  */
-var kid_1 = new Child();
+var kid_1 = new Child_1();
 kid_1.say();
 /**
  * #1 기본패턴 프로토타입 체인 추적
@@ -94,6 +94,13 @@ kid_1.say();
       Article.call(this);
   }
   var page = new StaticPage();
+
+  /**
+   *  + new Article()
+   *    tags                                                         + new BlogPost()
+   *    __proto__ ------------> BlogPost.prototype <----------------   __proto__
+   */
+
   console.log(article.hasOwnProperty('tags')); 
   console.log(blog.hasOwnProperty('tags'));
   console.log(page.hasOwnProperty('tags'));
@@ -177,7 +184,7 @@ Child_3.prototype = new Parent_3();
  * 즉, 부모가 가진 모든 것을 상속, 자신만의 프로퍼티를 부모의 프로퍼티와 별개로 변경 가능.
  * 부모 생성자 두번호출하는 셈이므로 비효율적임
  */
-var kid_3 = new Child('Patrick');
+var kid_3 = new Child_3('Patrick');
 kid_3.name;
 kid_3.say();
 delete kid_3.name;
@@ -225,9 +232,9 @@ function inherit_4(_c, _p){
    * 프로토타입 체인의 이점은 유지하면서 동일한 프로토타입을 공유할 때의 문제를 해결(부모와 자식의 프로토타입 사이에 직접적인 링크를 끊는다)
    * 빈함수 F()가 부모와 자식 사이에서 프록시 기능을 맡음
    * 
-   * + new Parent()                                                                     + new Child()
-   *   name = Adam                                           + new F()  <--------------   __proto__ 
-   *   __proto__ -----------> + Parent.prototype <----------   __proto__                    
+   * + new Parent()                                                                                                                                 + new Child()
+   *   name = Adam                                                                      + new F()   -------------> + Child.prototype ------------->   __proto__
+   *   __proto__ -----------> + Parent.prototype <---------- + F.prototype ----------->   __proto__ 
    *                            say()
    * 
    * 자식이 프로토타입의 프로퍼티만을 물려받음
@@ -240,32 +247,209 @@ Parent_5.prototype.say = function(){
     return this.name;
 }
 function Child_5(name){}
-inherit_5(Child_5, Parent_5);
 
 /**
  * 프록시 생성자 활용 패턴 :: 임시생성자가 결국은 부모의 프로토타입을 가져오는 프록시로 사용
- * 임시생성자는 한번만 만둘어두고 임시 생성자의 프로토타입만 변경, 즉시 실행함수를 활용하여 프론기 함수를 클로저 안에 저장
+ * 임시생성자는 한번만 만둘어두고 임시 생성자의 프로토타입만 변경, 즉시 실행함수를 활용하여 프록시 함수를 클로저 안에 저장
  */
-var inherit_5 = (function(){
+var inherit_5 = (function(_c, _p){
     var _f = function(){};
     return function(_c, _p){
         _f.prototype = _p.prototype;
         _c.prototype = new _f();
         _c.uber = _p.prototype; // 상위클래스 저장. 부모 원본에 대한 참조 추가
         /**
-     * 생성자 함수를 가리키는 포인터를 재설정
-     * 생성자 포인터를 재설정하지 않으면 모든 자식객체들의 생성자는 Parent()로 지정돼 있을 것, 유용성 떨어짐
-     */
-    _c.prototype.constructor = _c;
+         * 생성자 함수를 가리키는 포인터를 재설정
+         * 생성자 포인터를 재설정하지 않으면 모든 자식객체들의 생성자는 Parent()로 지정돼 있을 것, 유용성 떨어짐
+         */
+        _c.prototype.constructor = _c;
     }
 })();
 var kid_5 = new Child_5();
+inherit_5(Child_5, Parent_5);
 /**
  * kid_5.name은 undefined // name은 부모 자신의 프로퍼티인데 상속과정에서 new Parent()를 호출한 적이 없음. 
  * kid_5.say() // say()는 f함수의 prototype 체인을 통해서 찾을 수 있다.
  */
 kid_5.constructor.name; // 생성자 포인터를 재설정 후
-console.log(kid_5.constructor === Parent); // 생성자 포인터를 재설정 후
+console.log(kid_5.constructor === Parent_5); // 생성자 포인터를 재설정 후
 /**
  * constructor 프로퍼티는 런타임 객체 판별에 유용, 
  */
+
+
+ /**
+  * Klass 모방
+  */
+ var klass = function(Parent, props){
+    var Child, F, i;
+
+    /**
+     * 새로운 생성자
+     * Child() 생성자 함수가 생성된다. 마지막에 이 함수가 반환대어 클래스로 사용될 것이다
+     * __construct 메서드가 있다면 이 함수 안에서 호출된다. 
+     * 그 전에 부모의 __construct가 있다면 uber 스태틱 프로퍼티를 사용하여 호출한다
+     * Man 클래스처럼 별도의 부모클래스 없이 Object를 상속했다면 uver라는 프로퍼티는 정의되어있지 않을 수 있다
+     */
+    Child = function(){
+        if(Child.uber && Child.uber.hasOwnProperty("__construct")){
+            Child.uber.__construct.apply(this, arguments);
+        }
+        if(Child.prototype.hasOwnProperty("__construct")){
+            Child.prototype.__construct.apply(this, arguments);
+        }
+    };
+
+    /**
+     * 상속
+     * 상속을 처리한다
+     * 바로 앞절에서 다룬 클래식 방식의 최종버젼
+     * 유일하게 새로운 점은 상속받을 클래스에 Parent 가 존재하지 않을 경우 Object가 지정되도록
+     */
+    Parent = Parent || Object;
+    F = function(){};
+    F.prototype = Parent.prototype;
+    Child.prototype = new F();
+    Child.uber = Parent.prototype;
+    Child.prototype.constructor = Child;    
+
+    /**
+     * 루프를 돌면서 클래스를 실제로 정의하는 구현 메서드를 Child 프로토타입에 추가
+     */
+    for(i in props){
+        if(props.hasOwnProperty(i)){
+            Child.prototype[i] = props[i];
+        }
+    }
+    return Child;
+}
+
+var Man = klass(null, {
+    __construct: function(what){
+        console.log('Mans constructor');
+        this.name = what;
+    },
+    getName: function(){
+        return this.name;
+    }
+});
+
+var SuperMan = klass(Man, {
+    __construct: function(what){
+        console.log('Supermans constructor');
+    },
+    getName: function(){
+        var name = SuperMan.uber.getName.call(this);
+        return "I am " + name;
+    }
+});
+
+/**
+ * 프로토타입을 활용한 상속
+ * 객체가 객체를 상속받는다. 재사용하려는 객체가 하나 있고 또 다른 객체를 만들어 이 첫번째 객체의 기능을 가져온다
+ */
+
+ function Person_1(){
+     this.name = 'Adam';
+ }
+ Person_1.prototype.getName = function(){
+     return this.name;
+ }
+ var papa = new Person_1();
+ function object(o){
+     function F(){}
+     F.prototype = o;
+     return new F();
+ }
+ /**
+  * 임시 생성자 함수 F()를 사용, F()의 프로토타입에 parent 객체를 지정한다.임시생성자의 새로운 인스턴스 반환
+  * 
+  *                               + child = new F(); 
+  * + parent      -------------->   __proto__
+  *   name = papa
+  * 
+  * 부모 객체 자신의 프로퍼티와 생성자 함수의 프로토타입에 포함된 프로퍼티가 모두 상속됨
+  */
+ var child_6 = object(papa);
+ var child_6 = object(Person_1.prototype);
+ child_6.getName();
+
+
+ /**
+  * 프로퍼티 복사를 통한 상속패턴
+  * 
+  * 부모의 멤버들에 대해 류프를 돌면서 자식에 복사한다.
+  * 이러한 구현을 얕은 복사라고도 한다. 반대로 깊은 복사란 복사하려는 프로퍼티가 객체나 배열인지 확인해보고
+  * 객체 또는 배열이면 중첩된 프로퍼티까지 재귀적으로 순회하여 복사하는 것을 말한다.
+  * js에서는 객체는 참조만 전달되기 때문에 얕은 복사 후에 자식쪽에서 객체타입인 프로퍼티값을 수정하면
+  * 부모의 프로퍼티도 수정되어 버린다.
+  * 
+  */
+ function extend(parent, child){
+    var i;
+    child = child || {};
+    for(i in parent){
+        if(parent.hasOwnProperty(i)){
+            child[i] = parent[i];
+        }
+    }
+    return child;
+ }
+ var dad = {
+    name: 'Adam'
+ };
+ var kid = extend(dad);
+ kid.name;
+
+ /**
+  * 깊은 복사
+  */
+ function extendDeep(parent, child){
+    var i,
+        toStr = Object.prototype.toString,
+        astr = '[object Array]';
+    
+        child = child || {};
+
+        for(i in parent){
+            if(parent.hasOwnProperty(i)){
+                if(typeof parent[i] === 'object'){
+                    child[i] = (toStr.call(parent[i]) === astr) ? [] : {} ;
+                    extendDeep(parent[i], child[i]);
+                }else{
+                    child[i] = pareng[i]
+                }
+            }
+        }
+        return child;
+ }
+
+ /**
+  * 믹스인
+  * 하나의 객체를 복사하는 게 아니라 여러 객체에서 복사해온 것을 한 객체 안에 섞어 넣을 수도 있다
+  */
+ function mix(){
+     var arg, prop, child = {};
+     for(arg = 0; arg < arguments.length; arg += 1){
+         for(prop in argument[arg]){
+             if(arguments[arg].hasOwnProperty(prop)){
+                 child[prop] = arguments[arg][prop];
+             }
+         }
+     }
+     return child;
+ }
+ var cake = mix(
+     {egg: 2, large: true},
+     {bitter: 1, salted: true},
+     {flour: '3 cups'},
+     {suger: true}
+ )
+
+/**
+ * 메서드 빌려쓰기
+ * 쓸일이 없는 모든 메서드를 상속받지 않고 원하는 메서드만 골라서 사용
+ */
+
+
+  
